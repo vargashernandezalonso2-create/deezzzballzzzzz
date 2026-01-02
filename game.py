@@ -33,8 +33,17 @@ class PlinkoGame:
         self.game_mode = self.config.get('type', 'escape')
         
         # chintrolas variables según el modo -bynd
-        if self.game_mode == 'elimination':
-            self.balls = []  # lista de todas las bolas (vivas y muertas)
+        if self.game_mode == '8ball':
+            self.ball_yes = None
+            self.ball_no = None
+            self.yes_score = 0
+            self.no_score = 0
+            self.start_time = None
+            self.last_spawn_time = None
+            self.spawn_delay = self.config.get('ball_spawn_delay', 2)
+            self.winner = None
+        elif self.game_mode == 'elimination':
+            self.balls = []
             self.current_ball = None
             self.ball_timer = None
             self.balls_used = 0
@@ -73,12 +82,69 @@ class PlinkoGame:
             )
             self.rings.append(ring)
         
-        # q chidoteee creamos la primera bola -bynd
-        if self.game_mode == 'elimination':
+        # q chidoteee iniciamos según el modo -bynd
+        if self.game_mode == '8ball':
+            self.spawn_8ball_pair()
+            self.start_time = time.time()
+            self.last_spawn_time = time.time()
+        elif self.game_mode == 'elimination':
             self.spawn_new_ball()
         else:
             self.create_ball()
             self.start_time = time.time()
+    
+    def spawn_8ball_pair(self):
+        # aaa spawneamos el par de bolas yes/no -bynd
+        center_x = WIDTH // 2
+        center_y = HEIGHT // 2
+        
+        # vavavava bola YES (cyan) -bynd
+        if 'ball_yes' in self.config:
+            ball_config = self.config['ball_yes']
+            offset_x = ball_config.get('offset_x', -20)
+            
+            mass = ball_config['mass']
+            radius = ball_config['radius']
+            
+            body = pymunk.Body(mass, pymunk.moment_for_circle(mass, 0, radius))
+            body.position = (center_x + offset_x, center_y)
+            
+            shape = pymunk.Circle(body, radius)
+            shape.elasticity = ball_config['elasticity']
+            shape.friction = ball_config['friction']
+            shape.collision_type = 1  # ey tipo yes -bynd
+            
+            self.space.add(body, shape)
+            self.ball_yes = shape
+        
+        # chintrolas bola NO (naranja) -bynd
+        if 'ball_no' in self.config:
+            ball_config = self.config['ball_no']
+            offset_x = ball_config.get('offset_x', 20)
+            
+            mass = ball_config['mass']
+            radius = ball_config['radius']
+            
+            body = pymunk.Body(mass, pymunk.moment_for_circle(mass, 0, radius))
+            body.position = (center_x + offset_x, center_y)
+            
+            shape = pymunk.Circle(body, radius)
+            shape.elasticity = ball_config['elasticity']
+            shape.friction = ball_config['friction']
+            shape.collision_type = 2  # q chidoteee tipo no -bynd
+            
+            self.space.add(body, shape)
+            self.ball_no = shape
+        
+        print(f"⚪⚪ Par de bolas spawneado (Yes: cyan, No: naranja)")
+    
+    def remove_ball(self, ball):
+        # ala removemos una bola del espacio -bynd
+        if ball and ball.body:
+            try:
+                self.space.remove(ball.body, ball)
+            except:
+                pass
     
     def create_ball(self):
         # ala creamos una bola para modo escape -bynd
@@ -173,33 +239,90 @@ class PlinkoGame:
         if self.game_over:
             return
         
-        if self.game_mode == 'elimination':
+        if self.game_mode == '8ball':
+            # vavavava checamos ambas bolas -bynd
+            if self.ball_yes and self.ball_yes.body:
+                yes_pos = self.ball_yes.body.position
+                for ring in self.rings:
+                    if not ring.destroyed and ring.check_ball_escaped((yes_pos.x, yes_pos.y)):
+                        self.yes_score += 1
+                        self.remove_ball(self.ball_yes)
+                        self.ball_yes = None
+                        print(f"💙 YES escapa! Puntos: {self.yes_score}")
+                        break
+            
+            if self.ball_no and self.ball_no.body:
+                no_pos = self.ball_no.body.position
+                for ring in self.rings:
+                    if not ring.destroyed and ring.check_ball_escaped((no_pos.x, no_pos.y)):
+                        self.no_score += 1
+                        self.remove_ball(self.ball_no)
+                        self.ball_no = None
+                        print(f"🧡 NO escapa! Puntos: {self.no_score}")
+                        break
+            
+        elif self.game_mode == 'elimination':
             if not self.current_ball or not self.current_ball['alive']:
                 return
             ball_pos = self.current_ball['body'].position
+            
+            for ring in self.rings:
+                if ring.check_ball_escaped((ball_pos.x, ball_pos.y)):
+                    ring.destroy()
         else:
             if not self.ball:
                 return
             ball_pos = self.ball.body.position
-        
-        for ring in self.rings:
-            if ring.check_ball_escaped((ball_pos.x, ball_pos.y)):
-                ring.destroy()
-        
-        # vavavava checamos si ganó -bynd
-        all_destroyed = all(ring.destroyed for ring in self.rings)
-        if all_destroyed and not self.game_over:
-            self.won = True
-            self.game_over = True
-            print("🎉 ¡GANASTE! Escapaste de todos los anillos")
-            print("=" * 50)
+            
+            for ring in self.rings:
+                if ring.check_ball_escaped((ball_pos.x, ball_pos.y)):
+                    ring.destroy()
+            
+            # vavavava checamos si ganó -bynd
+            all_destroyed = all(ring.destroyed for ring in self.rings)
+            if all_destroyed and not self.game_over:
+                self.won = True
+                self.game_over = True
+                print("🎉 ¡GANASTE! Escapaste de todos los anillos")
+                print("=" * 50)
     
     def check_timer(self):
         # ey checamos el tiempo según el modo -bynd
         if self.game_over:
             return
         
-        if self.game_mode == 'elimination':
+        if self.game_mode == '8ball':
+            # q chidoteee timer global para 8ball -bynd
+            elapsed = time.time() - self.start_time
+            remaining = self.config.get('timer', 60) - elapsed
+            
+            if remaining <= 0:
+                self.game_over = True
+                # chintrolas determinamos ganador -bynd
+                if self.yes_score > self.no_score:
+                    self.winner = "YES"
+                elif self.no_score > self.yes_score:
+                    self.winner = "NO"
+                else:
+                    self.winner = "TIE"
+                
+                print(f"⏰ TIEMPO TERMINADO")
+                print(f"🏆 Ganador: {self.winner}")
+                print(f"   YES: {self.yes_score} | NO: {self.no_score}")
+                print("=" * 50)
+            
+            # ala respawnear bolas si no están -bynd
+            time_since_spawn = time.time() - self.last_spawn_time
+            if time_since_spawn >= self.spawn_delay:
+                if not self.ball_yes or not self.ball_no:
+                    if not self.ball_yes:
+                        self.remove_ball(self.ball_yes)
+                    if not self.ball_no:
+                        self.remove_ball(self.ball_no)
+                    self.spawn_8ball_pair()
+                    self.last_spawn_time = time.time()
+        
+        elif self.game_mode == 'elimination':
             # chintrolas timer por bola -bynd
             if self.current_ball and self.current_ball['alive']:
                 elapsed = time.time() - self.ball_timer
@@ -230,7 +353,12 @@ class PlinkoGame:
     
     def get_remaining_time(self):
         # chintrolas calculamos tiempo restante -bynd
-        if self.game_mode == 'elimination':
+        if self.game_mode == '8ball':
+            if not self.start_time:
+                return self.config.get('timer', 60)
+            elapsed = time.time() - self.start_time
+            return max(0, self.config.get('timer', 60) - elapsed)
+        elif self.game_mode == 'elimination':
             if not self.current_ball or not self.current_ball['alive']:
                 return 0
             elapsed = time.time() - self.ball_timer
@@ -271,7 +399,7 @@ class PlinkoGame:
         bg_color = tuple(self.config['colors']['background'])
         self.screen.fill(bg_color)
         
-        # chintrolas dibujamos las físicas pero con colores custom -bynd
+        # chintrolas dibujamos según el modo -bynd
         if self.game_mode == 'elimination':
             # q chidoteee dibujamos bolas muertas y vivas con colores diferentes -bynd
             for ball_data in self.balls:
@@ -297,6 +425,34 @@ class PlinkoGame:
                         pygame.draw.line(self.screen, ring_color, 
                                        (a.x, a.y), (b.x, b.y), 
                                        int(ring.thickness * 2))
+        
+        elif self.game_mode == '8ball':
+            # fokeis dibujamos anillos -bynd
+            for ring in self.rings:
+                if not ring.destroyed:
+                    ring_color = tuple(self.config['colors']['rings'])
+                    for body, shape in ring.segments:
+                        a = shape.a
+                        b = shape.b
+                        pygame.draw.line(self.screen, ring_color, 
+                                       (a.x, a.y), (b.x, b.y), 
+                                       int(ring.thickness * 2))
+            
+            # aaa dibujamos bola YES -bynd
+            if self.ball_yes and self.ball_yes.body:
+                yes_color = tuple(self.config['colors']['ball_yes'])
+                yes_pos = self.ball_yes.body.position
+                yes_radius = self.config['ball_yes']['radius']
+                pygame.draw.circle(self.screen, yes_color, 
+                                 (int(yes_pos.x), int(yes_pos.y)), int(yes_radius))
+            
+            # vavavava dibujamos bola NO -bynd
+            if self.ball_no and self.ball_no.body:
+                no_color = tuple(self.config['colors']['ball_no'])
+                no_pos = self.ball_no.body.position
+                no_radius = self.config['ball_no']['radius']
+                pygame.draw.circle(self.screen, no_color, 
+                                 (int(no_pos.x), int(no_pos.y)), int(no_radius))
         else:
             # fokeis modo escape normal -bynd
             self.space.debug_draw(self.draw_options)
@@ -308,81 +464,137 @@ class PlinkoGame:
     
     def draw_ui(self):
         # ala dibujamos el timer y mensajes -bynd
+        font_huge = pygame.font.Font(None, 120)
         font_big = pygame.font.Font(None, 72)
+        font_medium = pygame.font.Font(None, 48)
         font_small = pygame.font.Font(None, 36)
         font_tiny = pygame.font.Font(None, 24)
         
-        # vavavava color del timer según tiempo restante -bynd
-        remaining = self.get_remaining_time()
-        if self.game_mode == 'elimination':
-            if remaining < 1:
-                timer_color = tuple(self.config['colors'].get('timer_warning', [255, 100, 100]))
+        if self.game_mode == '8ball':
+            # chintrolas dibujamos pregunta arriba -bynd
+            question = self.config.get('question', 'Magic 8 Ball')
+            question_color = tuple(self.config['colors']['question_text'])
+            question_text = font_small.render(question, True, question_color)
+            question_width = question_text.get_width()
+            self.screen.blit(question_text, (WIDTH // 2 - question_width // 2, 30))
+            
+            if not self.game_over:
+                # q chidoteee contadores YES y NO -bynd
+                yes_color = tuple(self.config['colors']['yes_text'])
+                no_color = tuple(self.config['colors']['no_text'])
+                
+                yes_text = font_medium.render(f"Yes: {self.yes_score}", True, yes_color)
+                no_text = font_medium.render(f"No: {self.no_score}", True, no_color)
+                
+                self.screen.blit(yes_text, (50, HEIGHT - 150))
+                self.screen.blit(no_text, (WIDTH - 150, HEIGHT - 150))
+                
+                # ala timer abajo en el centro -bynd
+                timer_color = tuple(self.config['colors']['timer_text'])
+                time_text = font_big.render(f"{self.get_remaining_time():.2f}", True, timer_color)
+                time_width = time_text.get_width()
+                self.screen.blit(time_text, (WIDTH // 2 - time_width // 2, HEIGHT - 100))
+            else:
+                # fokeis pantalla de ganador -bynd
+                winner_color = tuple(self.config['colors']['winner_text'])
+                
+                if self.winner == "YES":
+                    winner_text = font_huge.render("YES", True, tuple(self.config['colors']['yes_text']))
+                elif self.winner == "NO":
+                    winner_text = font_huge.render("NO", True, tuple(self.config['colors']['no_text']))
+                else:
+                    winner_text = font_huge.render("TIE", True, (200, 200, 200))
+                
+                winner_width = winner_text.get_width()
+                self.screen.blit(winner_text, (WIDTH // 2 - winner_width // 2, HEIGHT // 2 - 60))
+                
+                # aaa puntaje final -bynd
+                score_text = font_small.render(f"{self.yes_score} - {self.no_score}", True, (200, 200, 200))
+                score_width = score_text.get_width()
+                self.screen.blit(score_text, (WIDTH // 2 - score_width // 2, HEIGHT // 2 + 40))
+                
+                # vavavava mensaje de reinicio -bynd
+                restart_msg = "Presiona R para reiniciar | ESC para salir"
+                restart_text = font_tiny.render(restart_msg, True, (200, 200, 200))
+                restart_width = restart_text.get_width()
+                self.screen.blit(restart_text, (WIDTH // 2 - restart_width // 2, HEIGHT // 2 + 100))
+        
+        else:
+            # q chidoteee UI para otros modos -bynd
+            remaining = self.get_remaining_time()
+            if self.game_mode == 'elimination':
+                if remaining < 1:
+                    timer_color = tuple(self.config['colors'].get('timer_warning', [255, 100, 100]))
+                else:
+                    timer_color = tuple(self.config['colors']['timer_text'])
             else:
                 timer_color = tuple(self.config['colors']['timer_text'])
-        else:
-            timer_color = tuple(self.config['colors']['timer_text'])
-        
-        time_text = font_big.render(f"{remaining:.2f}", True, timer_color)
-        self.screen.blit(time_text, (WIDTH // 2 - 80, HEIGHT - 100))
-        
-        # fokeis mensajes de estado -bynd
-        if self.game_over:
-            if self.won:
-                msg = "¡GANASTE!"
-                color = (100, 255, 100)
-            else:
-                msg = "GAME OVER"
-                color = (255, 100, 100)
             
-            text = font_small.render(msg, True, color)
-            self.screen.blit(text, (WIDTH // 2 - 100, 50))
+            time_text = font_big.render(f"{remaining:.2f}", True, timer_color)
+            self.screen.blit(time_text, (WIDTH // 2 - 80, HEIGHT - 100))
             
-            restart_msg = "Presiona R para reiniciar | ESC para salir"
-            restart_text = font_tiny.render(restart_msg, True, (200, 200, 200))
-            self.screen.blit(restart_text, (WIDTH // 2 - 180, 90))
-        else:
-            msg = self.config.get('description', 'Escapa de todos los anillos!')
-            text = font_tiny.render(msg, True, (255, 255, 255))
-            text_width = text.get_width()
-            self.screen.blit(text, (WIDTH // 2 - text_width // 2, 20))
-            
-            # chintrolas contador según modo -bynd
-            if self.game_mode == 'elimination':
-                balls_msg = f"Bolas: {self.balls_used}/{self.max_balls}"
-                balls_text = font_tiny.render(balls_msg, True, (200, 200, 200))
-                self.screen.blit(balls_text, (20, HEIGHT - 70))
+            # fokeis mensajes de estado -bynd
+            if self.game_over:
+                if self.won:
+                    msg = "¡GANASTE!"
+                    color = (100, 255, 100)
+                else:
+                    msg = "GAME OVER"
+                    color = (255, 100, 100)
                 
-                dead_balls = sum(1 for b in self.balls if not b['alive'])
-                dead_msg = f"Bolas muertas: {dead_balls}"
-                dead_text = font_tiny.render(dead_msg, True, (150, 150, 150))
-                self.screen.blit(dead_text, (20, HEIGHT - 40))
-            
-            # q chidoteee anillos restantes -bynd
-            remaining_rings = sum(1 for ring in self.rings if not ring.destroyed)
-            rings_msg = f"Anillos: {remaining_rings}/{len(self.rings)}"
-            rings_text = font_tiny.render(rings_msg, True, (200, 200, 200))
-            
-            if self.game_mode == 'elimination':
-                self.screen.blit(rings_text, (WIDTH - 200, HEIGHT - 40))
+                text = font_small.render(msg, True, color)
+                self.screen.blit(text, (WIDTH // 2 - 100, 50))
+                
+                restart_msg = "Presiona R para reiniciar | ESC para salir"
+                restart_text = font_tiny.render(restart_msg, True, (200, 200, 200))
+                self.screen.blit(restart_text, (WIDTH // 2 - 180, 90))
             else:
-                self.screen.blit(rings_text, (20, HEIGHT - 40))
+                msg = self.config.get('description', 'Escapa de todos los anillos!')
+                text = font_tiny.render(msg, True, (255, 255, 255))
+                text_width = text.get_width()
+                self.screen.blit(text, (WIDTH // 2 - text_width // 2, 20))
+                
+                # chintrolas contador según modo -bynd
+                if self.game_mode == 'elimination':
+                    balls_msg = f"Bolas: {self.balls_used}/{self.max_balls}"
+                    balls_text = font_tiny.render(balls_msg, True, (200, 200, 200))
+                    self.screen.blit(balls_text, (20, HEIGHT - 70))
+                    
+                    dead_balls = sum(1 for b in self.balls if not b['alive'])
+                    dead_msg = f"Bolas muertas: {dead_balls}"
+                    dead_text = font_tiny.render(dead_msg, True, (150, 150, 150))
+                    self.screen.blit(dead_text, (20, HEIGHT - 40))
+                
+                # q chidoteee anillos restantes -bynd
+                if self.game_mode != '8ball':
+                    remaining_rings = sum(1 for ring in self.rings if not ring.destroyed)
+                    rings_msg = f"Anillos: {remaining_rings}/{len(self.rings)}"
+                    rings_text = font_tiny.render(rings_msg, True, (200, 200, 200))
+                    
+                    if self.game_mode == 'elimination':
+                        self.screen.blit(rings_text, (WIDTH - 200, HEIGHT - 40))
+                    else:
+                        self.screen.blit(rings_text, (20, HEIGHT - 40))
     
     def print_level_info(self):
         # aaa mostramos info del nivel en consola -bynd
         print("\n" + "=" * 60)
-        print("🎮 PLINKO - ESCAPE MODE")
+        print("🎮 PLINKO")
         print("=" * 60)
         print(f"🎯 Modo: {self.game_mode.upper()}")
         print(f"📝 Descripción: {self.config.get('description', 'N/A')}")
-        print(f"⭕ Anillos: {len(self.rings)}")
         
-        if self.game_mode == 'elimination':
+        if self.game_mode == '8ball':
+            print(f"❓ Pregunta: {self.config.get('question', 'N/A')}")
+            print(f"⏱️ Timer total: {self.config.get('timer', 60)}s")
+            print(f"🔄 Spawn delay: {self.spawn_delay}s")
+        elif self.game_mode == 'elimination':
             print(f"⚪ Bolas máximas: {self.max_balls}")
             print(f"⏱️ Timer por bola: {self.ball_lifetime}s")
         else:
             print(f"⏱️ Timer: {self.config.get('timer', 30)}s")
         
-        print(f"🎱 Bola: Radio {self.config['ball']['radius']}, Masa {self.config['ball']['mass']}")
+        print(f"⭕ Anillos: {len(self.rings)}")
         print(f"🌍 Gravedad: {self.config['gravity']}")
         print("-" * 60)
         print("💡 Controles:")
