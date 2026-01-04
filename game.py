@@ -15,7 +15,7 @@ class PlinkoGame:
         # aaa inicialización de pygame -bynd
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        pygame.display.set_caption("Plinko - Escape Mode")
+        pygame.display.set_caption("Plinko")
         self.clock = pygame.time.Clock()
         
         # vavavava cargamos el nivel usando LevelConfig -bynd
@@ -26,7 +26,7 @@ class PlinkoGame:
         self.space = pymunk.Space()
         self.space.gravity = tuple(self.config['gravity'])
         
-        self.draw_options = pymunk.pygame_util.DrawOptions(self.screen)
+        # chintrolas NO usamos draw_options, dibujamos todo manual -bynd
         
         # q chidoteee variables del juego -bynd
         self.rings = []
@@ -247,9 +247,10 @@ class PlinkoGame:
                 for ring in self.rings:
                     if not ring.destroyed and ring.check_ball_escaped((yes_pos.x, yes_pos.y)):
                         self.yes_score += 1
+                        ring.destroy()  # q chidoteee destruimos el anillo -bynd
                         self.remove_ball(self.ball_yes)
                         self.ball_yes = None
-                        print(f"💙 YES escapa! Puntos: {self.yes_score}")
+                        print(f"💙 YES escapa por anillo R={ring.radius:.0f}! Puntos: {self.yes_score}")
                         break
             
             if self.ball_no and self.ball_no.body:
@@ -257,9 +258,10 @@ class PlinkoGame:
                 for ring in self.rings:
                     if not ring.destroyed and ring.check_ball_escaped((no_pos.x, no_pos.y)):
                         self.no_score += 1
+                        ring.destroy()  # ala destruimos el anillo -bynd
                         self.remove_ball(self.ball_no)
                         self.ball_no = None
-                        print(f"🧡 NO escapa! Puntos: {self.no_score}")
+                        print(f"🧡 NO escapa por anillo R={ring.radius:.0f}! Puntos: {self.no_score}")
                         break
             
         elif self.game_mode == 'elimination':
