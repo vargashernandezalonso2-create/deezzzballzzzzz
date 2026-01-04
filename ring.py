@@ -8,7 +8,14 @@ class Ring:
         self.center = center
         self.radius = radius
         self.gap_angle = gap_angle
+        
+        # chintrolas validamos gap mínimo de 60 grados -bynd
+        MIN_GAP_SIZE = 60
+        if gap_size < MIN_GAP_SIZE:
+            print(f"⚠️ Gap size {gap_size}° muy pequeño, usando mínimo {MIN_GAP_SIZE}°")
+            gap_size = MIN_GAP_SIZE
         self.gap_size = gap_size
+        
         self.thickness = thickness
         self.elasticity = elasticity
         self.friction = friction
