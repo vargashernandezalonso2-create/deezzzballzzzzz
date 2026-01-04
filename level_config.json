@@ -1,47 +1,56 @@
 {
-  "type": "escape",
-  "description": "La bola debe escapar de los anillos por las aberturas",
-  "rings_no": 20,
-  "timer": 30,
+  "type": "8ball",
+  "question": "Does your crush love you?",
+  "timer": 60,
+  "ball_spawn_delay": 2,
+  "rings_no": 15,
   "ball_start": "center",
   "rings": {
     "thickness": 8,
     "elasticity": 0.9,
     "friction": 0.3,
     "ring_configs": [
-      {"radius": 30, "gap_angle": 0, "gap_size": 45},
-      {"radius": 47, "gap_angle": 85, "gap_size": 45},
-      {"radius": 64, "gap_angle": 170, "gap_size": 45},
-      {"radius": 81, "gap_angle": 255, "gap_size": 45},
-      {"radius": 98, "gap_angle": 340, "gap_size": 45},
-      {"radius": 115, "gap_angle": 65, "gap_size": 45},
-      {"radius": 132, "gap_angle": 150, "gap_size": 45},
-      {"radius": 149, "gap_angle": 235, "gap_size": 45},
-      {"radius": 166, "gap_angle": 320, "gap_size": 45},
-      {"radius": 183, "gap_angle": 45, "gap_size": 45},
-      {"radius": 200, "gap_angle": 130, "gap_size": 45},
-      {"radius": 217, "gap_angle": 215, "gap_size": 45},
-      {"radius": 234, "gap_angle": 300, "gap_size": 45},
-      {"radius": 251, "gap_angle": 25, "gap_size": 45},
-      {"radius": 268, "gap_angle": 110, "gap_size": 45},
-      {"radius": 285, "gap_angle": 195, "gap_size": 45},
-      {"radius": 302, "gap_angle": 280, "gap_size": 45},
-      {"radius": 319, "gap_angle": 5, "gap_size": 45},
-      {"radius": 336, "gap_angle": 90, "gap_size": 45},
-      {"radius": 353, "gap_angle": 175, "gap_size": 45}
+      {"radius": 40, "gap_angle": 0, "gap_size": 50, "rotation_speed": 30},
+      {"radius": 60, "gap_angle": 72, "gap_size": 50, "rotation_speed": -25},
+      {"radius": 80, "gap_angle": 144, "gap_size": 50, "rotation_speed": 20},
+      {"radius": 100, "gap_angle": 216, "gap_size": 50, "rotation_speed": -30},
+      {"radius": 120, "gap_angle": 288, "gap_size": 50, "rotation_speed": 25},
+      {"radius": 140, "gap_angle": 36, "gap_size": 50, "rotation_speed": -20},
+      {"radius": 160, "gap_angle": 108, "gap_size": 50, "rotation_speed": 30},
+      {"radius": 180, "gap_angle": 180, "gap_size": 50, "rotation_speed": -25},
+      {"radius": 200, "gap_angle": 252, "gap_size": 50, "rotation_speed": 20},
+      {"radius": 220, "gap_angle": 324, "gap_size": 50, "rotation_speed": -30},
+      {"radius": 240, "gap_angle": 54, "gap_size": 50, "rotation_speed": 25},
+      {"radius": 260, "gap_angle": 126, "gap_size": 50, "rotation_speed": -20},
+      {"radius": 280, "gap_angle": 198, "gap_size": 50, "rotation_speed": 30},
+      {"radius": 300, "gap_angle": 270, "gap_size": 50, "rotation_speed": -25},
+      {"radius": 320, "gap_angle": 342, "gap_size": 50, "rotation_speed": 20}
     ]
   },
-  "ball": {
+  "ball_yes": {
     "radius": 12,
     "mass": 1,
     "elasticity": 0.7,
-    "friction": 0.5
+    "friction": 0.5,
+    "offset_x": -20
+  },
+  "ball_no": {
+    "radius": 12,
+    "mass": 1,
+    "elasticity": 0.7,
+    "friction": 0.5,
+    "offset_x": 20
   },
   "gravity": [0, 400],
   "colors": {
     "background": [20, 20, 30],
     "rings": [255, 180, 100],
-    "ball": [255, 255, 255],
-    "timer_text": [255, 220, 100]
+    "ball_yes": [100, 255, 255],
+    "ball_no": [255, 180, 100],
+    "timer_text": [255, 255, 255],
+    "question_text": [200, 200, 200],
+    "yes_text": [100, 255, 255],
+    "no_text": [255, 180, 100],
+    "winner_text": [100, 255, 100]
   }
 }
