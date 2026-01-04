@@ -4,64 +4,71 @@ class LevelConfig:
     def __init__(self, config_file='level_config.json'):
         # aaa inicializamos con el path del JSON -bynd
         self.config_file = config_file
-        self.levels_data = None
+        self.level_data = None
         self.load_config()
     
     def load_config(self):
-        # ey cargamos el archivo JSON -bynd
+        # ey cargamos el archivo JSON directo -bynd
         try:
-            with open(self.config_file, 'r') as f:
-                self.levels_data = json.load(f)
+            with open(self.config_file, 'r', encoding='utf-8') as f:
+                self.level_data = json.load(f)
                 print(f"✅ Configuración cargada desde {self.config_file}")
                 return True
         except FileNotFoundError:
             print(f"❌ No se encontró {self.config_file}")
-            self.levels_data = None
+            self.level_data = None
             return False
         except json.JSONDecodeError as e:
             print(f"❌ Error al parsear JSON: {e}")
-            self.levels_data = None
+            self.level_data = None
             return False
     
-    def get_level(self, level_name):
-        # vavavava obtenemos la config de un nivel específico -bynd
-        if not self.levels_data:
-            print(f"⚠️  No hay datos cargados, usando config por defecto")
-            return self.get_default_level()
-        
-        if 'levels' not in self.levels_data:
-            print(f"⚠️  Formato de JSON incorrecto")
-            return self.get_default_level()
-        
-        level = self.levels_data['levels'].get(level_name)
-        
-        if not level:
-            print(f"⚠️  Nivel '{level_name}' no encontrado")
-            available = list(self.levels_data['levels'].keys())
-            print(f"   Niveles disponibles: {available}")
+    def get_level(self):
+        # vavavava obtenemos la config del nivel sin parámetros -bynd
+        if not self.level_data:
+            print(f"⚠️ No hay datos cargados, usando config por defecto")
             return self.get_default_level()
         
         # chintrolas validamos q tenga todos los campos necesarios -bynd
-        if self.validate_level(level):
-            print(f"✅ Nivel '{level_name}' cargado correctamente")
-            return level
+        if self.validate_level(self.level_data):
+            print(f"✅ Nivel cargado correctamente")
+            return self.level_data
         else:
-            print(f"⚠️  Nivel '{level_name}' tiene campos faltantes")
+            print(f"⚠️ El nivel tiene campos faltantes")
             return self.get_default_level()
     
     def validate_level(self, level):
         # q chidoteee validamos que el nivel tenga estructura correcta -bynd
-        required_fields = ['type', 'rings_no', 'timer', 'rings', 'ball', 'gravity', 'colors']
+        game_type = level.get('type', 'escape')
         
-        for field in required_fields:
+        # ala campos comunes a todos los modos -bynd
+        common_fields = ['type', 'rings', 'gravity', 'colors']
+        
+        for field in common_fields:
             if field not in level:
                 print(f"   ❌ Falta campo: {field}")
                 return False
         
-        # ala validamos sub-campos -bynd
+        # fokeis validamos sub-campos -bynd
         if 'ring_configs' not in level['rings']:
             print(f"   ❌ Falta rings.ring_configs")
             return False
+        
+        # vavavava validación específica por modo -bynd
+        if game_type == '8ball':
+            if 'question' not in level:
+                print(f"   ⚠️ Falta 'question' para modo 8ball")
+            if 'ball_yes' not in level or 'ball_no' not in level:
+                print(f"   ❌ Faltan 'ball_yes' o 'ball_no' para modo 8ball")
+                return False
+        elif game_type == 'elimination':
+            if 'ball_timer' not in level or 'max_balls' not in level:
+                print(f"   ❌ Faltan 'ball_timer' o 'max_balls' para modo elimination")
+                return False
+        else:  # escape o cualquier otro
+            if 'ball' not in level:
+                print(f"   ❌ Falta 'ball' para modo escape")
+                return False
         
         return True
     
@@ -106,25 +113,17 @@ class LevelConfig:
             }
         }
     
-    def list_available_levels(self):
-        # ey lista todos los niveles disponibles -bynd
-        if not self.levels_data or 'levels' not in self.levels_data:
-            return []
-        
-        return list(self.levels_data['levels'].keys())
-    
-    def get_level_info(self, level_name):
-        # vavavava info resumida de un nivel -bynd
-        level = self.get_level(level_name)
+    def get_level_info(self):
+        # vavavava info resumida del nivel -bynd
+        level = self.get_level()
         
         if not level:
             return None
         
         info = {
-            'name': level_name,
             'type': level.get('type', 'unknown'),
             'description': level.get('description', 'Sin descripción'),
-            'rings_no': level.get('rings_no', 0),
+            'rings_no': level.get('rings_no', len(level.get('rings', {}).get('ring_configs', []))),
             'timer': level.get('timer', 0)
         }
         
