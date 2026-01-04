@@ -1,0 +1,35 @@
+pygame 2.6.1 (SDL 2.28.4, Python 3.13.2)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+🎮 PLINKO - ESCAPE MODE
+==================================================
+Cargando nivel desde level_config.json...
+
+✅ Configuración cargada desde level_config.json
+✅ Nivel cargado correctamente
+Traceback (most recent call last):
+  File "/home/tvh/deez/main.py", line 15, in <module>
+    main()
+    ~~~~^^
+  File "/home/tvh/deez/main.py", line 11, in main
+    game = PlinkoGame()
+  File "/home/tvh/deez/game.py", line 61, in __init__
+    self.setup_level()
+    ~~~~~~~~~~~~~~~~^^
+  File "/home/tvh/deez/game.py", line 73, in setup_level
+    ring = Ring(
+        space=self.space,
+    ...<7 lines>...
+        rotation_speed=ring_data.get('rotation_speed', 0)
+    )
+  File "/home/tvh/deez/ring.py", line 31, in __init__
+    self.create_ring_segments()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/tvh/deez/ring.py", line 74, in create_ring_segments
+    self.space.add(shape)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/home/tvh/.venvs/bot/lib/python3.13/site-packages/pymunk/space.py", line 368, in add
+    self._add_shape(o)
+    ~~~~~~~~~~~~~~~^^^
+  File "/home/tvh/.venvs/bot/lib/python3.13/site-packages/pymunk/space.py", line 429, in _add_shape
+    shape.body.space == self
+AssertionError: The shape's body must be added to the space before (or at the same time) as the shape.
