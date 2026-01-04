@@ -23,8 +23,10 @@ class Ring:
             self.body = pymunk.Body(body_type=pymunk.Body.KINEMATIC)
             self.body.position = center
             self.body.angular_velocity = math.radians(rotation_speed)
+            # ala agregamos el body al space ANTES de los shapes -bynd
+            self.space.add(self.body)
         else:
-            # ala si no rota, usamos estático -bynd
+            # fokeis si no rota, usamos estático -bynd
             self.body = None
         
         # ey creamos los segmentos del anillo -bynd
